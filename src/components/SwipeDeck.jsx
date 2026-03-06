@@ -59,10 +59,52 @@ export default function SwipeDeck() {
 
   const loadInitialArticles = useCallback(async () => {
     setLoading(true)
-    const topics = getTopics()
-    const fetched = await fetchArticlesForTopics(topics, 3)
-    setArticles(fetched)
-    setCurrentIndex(0)
+    try {
+      const topics = getTopics()
+      let fetched = await fetchArticlesForTopics(topics, 3)
+      // Fallback to random if no personal results (all seen or no topics)
+      if (fetched.length === 0) {
+        const randoms = await getRandomArticles(8)
+        for (const r of randoms) {
+          const summary = await getArticleSummary(r.title)
+          if (summary && summary.type === 'standard' && summary.extract) {
+            fetched.push({
+              title: summary.title,
+              description: summary.extract,
+              thumbnail: summary.thumbnail?.source || null,
+              originalimage: summary.originalimage?.source || null,
+              pageUrl: summary.content_urls?.desktop?.page || '',
+              categories: [],
+            })
+          }
+        }
+      }
+      setArticles(fetched)
+      setCurrentIndex(0)
+    } catch (e) {
+      // Retry once on network error (common when PWA reopens)
+      try {
+        const randoms = await getRandomArticles(5)
+        const fallback = []
+        for (const r of randoms) {
+          const summary = await getArticleSummary(r.title)
+          if (summary && summary.type === 'standard' && summary.extract) {
+            fallback.push({
+              title: summary.title,
+              description: summary.extract,
+              thumbnail: summary.thumbnail?.source || null,
+              originalimage: summary.originalimage?.source || null,
+              pageUrl: summary.content_urls?.desktop?.page || '',
+              categories: [],
+            })
+          }
+        }
+        setArticles(fallback)
+        setCurrentIndex(0)
+      } catch {
+        // Give up, show empty state
+      }
+    }
     setLoading(false)
   }, [])
 
@@ -91,16 +133,31 @@ export default function SwipeDeck() {
       return
     }
 
-    // Mix fresh topic articles with category-based recommendations
+    // Build expanding search terms from liked articles + base topics + categories
     const topics = getTopics()
     const topCats = getTopCategories(5)
+    const liked = getLiked()
 
-    const results = await Promise.all([
-      fetchArticlesForTopics(topics, 1),
-      topCats.length > 0 ? fetchRelatedArticles(topCats, 3) : Promise.resolve([]),
-    ])
+    // Pick random liked article titles as search terms (the more you like, the wider the search)
+    const likedTerms = liked
+      .sort(() => Math.random() - 0.5)
+      .slice(0, Math.min(liked.length, 4))
+      .map(a => a.title)
 
-    const more = [...results[0], ...results[1]].sort(() => Math.random() - 0.5)
+    const searches = []
+    // Always fetch some from base topics
+    searches.push(fetchArticlesForTopics(topics, 1))
+    // Category-based if available
+    if (topCats.length > 0) {
+      searches.push(fetchRelatedArticles(topCats, 2))
+    }
+    // Liked-title-based searches — this is the expanding part
+    if (likedTerms.length > 0) {
+      searches.push(fetchRelatedArticles(likedTerms, 3))
+    }
+
+    const results = await Promise.all(searches)
+    const more = results.flat().sort(() => Math.random() - 0.5)
 
     setArticles(prev => {
       const existingTitles = new Set(prev.map(a => a.title))
