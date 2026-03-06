@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { motion } from 'framer-motion'
 import SwipeCard from './SwipeCard'
 import ArticleModal from './ArticleModal'
 import LikedList from './LikedList'
@@ -27,9 +27,9 @@ export default function SwipeDeck() {
   const [loading, setLoading] = useState(true)
   const [modalArticle, setModalArticle] = useState(null)
   const [showLiked, setShowLiked] = useState(false)
-  const [swipeDirection, setSwipeDirection] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [mode, setMode] = useState('personal') // 'personal' | 'random'
+  const cardRef = useRef(null)
 
   const loadRandomArticles = useCallback(async () => {
     setLoading(true)
@@ -116,12 +116,10 @@ export default function SwipeDeck() {
     const article = articles[currentIndex]
     if (!article) return
 
-    setSwipeDirection(direction)
+    setCurrentIndex(prev => prev + 1)
 
     if (direction === 'right') {
       addLiked(article)
-      // Fetch related articles from the liked article's internal links
-      // and inject them right after the current position
       try {
         const [cats, related] = await Promise.all([
           getArticleCategories(article.title),
@@ -147,15 +145,12 @@ export default function SwipeDeck() {
     } else {
       addDisliked(article.title)
     }
-
-    setTimeout(() => {
-      setCurrentIndex(prev => prev + 1)
-      setSwipeDirection(null)
-    }, 200)
   }
 
   function handleButtonSwipe(direction) {
-    handleSwipe(direction)
+    if (cardRef.current) {
+      cardRef.current.flyOut(direction)
+    }
   }
 
   function toggleMode() {
@@ -219,7 +214,7 @@ export default function SwipeDeck() {
               </button>
             </div>
           ) : (
-            <AnimatePresence>
+            <>
               {nextArticle && (
                 <SwipeCard
                   key={nextArticle.title + '-next'}
@@ -227,16 +222,18 @@ export default function SwipeDeck() {
                   onSwipe={() => {}}
                   onTap={() => {}}
                   isTop={false}
+                  dragX={cardRef.current?.x}
                 />
               )}
               <SwipeCard
+                ref={cardRef}
                 key={currentArticle.title}
                 article={currentArticle}
                 onSwipe={handleSwipe}
                 onTap={setModalArticle}
                 isTop={true}
               />
-            </AnimatePresence>
+            </>
           )}
         </div>
       </div>
