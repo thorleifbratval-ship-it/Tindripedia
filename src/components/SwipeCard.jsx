@@ -90,9 +90,15 @@ export default function SwipeCard({ article, onSwipe, onTap, isTop }) {
           <p className="text-text-light text-sm leading-relaxed line-clamp-4 flex-1">
             {article.description}
           </p>
-          <p className="text-xs text-text-light/50 mt-3">
-            Tap to read more
-          </p>
+          <button
+            className="mt-3 w-full py-2.5 rounded-xl bg-secondary text-white font-bold text-base tracking-wide hover:bg-secondary-dark transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              onTap(article)
+            }}
+          >
+            LES
+          </button>
         </div>
       </div>
     </motion.div>

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import SwipeCard from './SwipeCard'
 import ArticleModal from './ArticleModal'
 import LikedList from './LikedList'
+import Settings from './Settings'
 import {
   getTopics,
   addLiked,
@@ -15,6 +16,8 @@ import {
   fetchArticlesForTopics,
   fetchRelatedArticles,
   getArticleCategories,
+  getRandomArticles,
+  getArticleSummary,
 } from '../utils/wikipedia'
 
 export default function SwipeDeck() {
@@ -24,6 +27,7 @@ export default function SwipeDeck() {
   const [modalArticle, setModalArticle] = useState(null)
   const [showLiked, setShowLiked] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const loadInitialArticles = useCallback(async () => {
     setLoading(true)
@@ -85,6 +89,32 @@ export default function SwipeDeck() {
     handleSwipe(direction)
   }
 
+  async function handleSurpriseMe() {
+    setLoading(true)
+    try {
+      const randoms = await getRandomArticles(5)
+      const newArticles = []
+      for (const r of randoms) {
+        const summary = await getArticleSummary(r.title)
+        if (summary && summary.type === 'standard' && summary.extract) {
+          newArticles.push({
+            title: summary.title,
+            description: summary.extract,
+            thumbnail: summary.thumbnail?.source || null,
+            originalimage: summary.originalimage?.source || null,
+            pageUrl: summary.content_urls?.desktop?.page || '',
+            categories: [],
+          })
+        }
+      }
+      setArticles(newArticles)
+      setCurrentIndex(0)
+    } catch (e) {
+      // silently fail
+    }
+    setLoading(false)
+  }
+
   const currentArticle = articles[currentIndex]
   const nextArticle = articles[currentIndex + 1]
 
@@ -95,17 +125,25 @@ export default function SwipeDeck() {
         <h1 className="text-xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Tindripedia
         </h1>
-        <button
-          onClick={() => setShowLiked(true)}
-          className="relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-        >
-          <span className="text-lg">❤️</span>
-          {getLiked().length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-              {getLiked().length}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
+            <span className="text-lg">⚙️</span>
+          </button>
+          <button
+            onClick={() => setShowLiked(true)}
+            className="relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
+            <span className="text-lg">❤️</span>
+            {getLiked().length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                {getLiked().length}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Card Stack */}
@@ -165,6 +203,15 @@ export default function SwipeDeck() {
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
+            onClick={handleSurpriseMe}
+            className="w-12 h-12 rounded-full bg-white/10 border-2 border-yellow-400/50 hover:bg-yellow-400/20 flex items-center justify-center transition-colors shadow-lg"
+          >
+            <span className="text-xl">🎲</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => handleButtonSwipe('right')}
             className="w-16 h-16 rounded-full bg-white/10 border-2 border-like/50 hover:bg-like/20 flex items-center justify-center transition-colors shadow-lg"
           >
@@ -186,6 +233,13 @@ export default function SwipeDeck() {
         isOpen={showLiked}
         onClose={() => setShowLiked(false)}
         onSelectArticle={setModalArticle}
+      />
+
+      {/* Settings */}
+      <Settings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onSave={loadInitialArticles}
       />
     </div>
   )
