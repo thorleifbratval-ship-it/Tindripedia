@@ -29,6 +29,33 @@ export default function SwipeDeck() {
   const [showLiked, setShowLiked] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [mode, setMode] = useState('personal') // 'personal' | 'random'
+
+  const loadRandomArticles = useCallback(async () => {
+    setLoading(true)
+    try {
+      const randoms = await getRandomArticles(8)
+      const newArticles = []
+      for (const r of randoms) {
+        const summary = await getArticleSummary(r.title)
+        if (summary && summary.type === 'standard' && summary.extract) {
+          newArticles.push({
+            title: summary.title,
+            description: summary.extract,
+            thumbnail: summary.thumbnail?.source || null,
+            originalimage: summary.originalimage?.source || null,
+            pageUrl: summary.content_urls?.desktop?.page || '',
+            categories: [],
+          })
+        }
+      }
+      setArticles(newArticles)
+      setCurrentIndex(0)
+    } catch (e) {
+      // silently fail
+    }
+    setLoading(false)
+  }, [])
 
   const loadInitialArticles = useCallback(async () => {
     setLoading(true)
@@ -40,6 +67,29 @@ export default function SwipeDeck() {
   }, [])
 
   const loadMoreArticles = useCallback(async () => {
+    if (mode === 'random') {
+      const randoms = await getRandomArticles(5)
+      const newArticles = []
+      for (const r of randoms) {
+        const summary = await getArticleSummary(r.title)
+        if (summary && summary.type === 'standard' && summary.extract) {
+          newArticles.push({
+            title: summary.title,
+            description: summary.extract,
+            thumbnail: summary.thumbnail?.source || null,
+            originalimage: summary.originalimage?.source || null,
+            pageUrl: summary.content_urls?.desktop?.page || '',
+            categories: [],
+          })
+        }
+      }
+      setArticles(prev => {
+        const existingTitles = new Set(prev.map(a => a.title))
+        const unique = newArticles.filter(a => !existingTitles.has(a.title))
+        return unique.length > 0 ? [...prev, ...unique] : prev
+      })
+      return
+    }
     const topCats = getTopCategories(5)
     const topics = getTopics()
     const searchTerms = topCats.length > 0 ? topCats : topics
@@ -50,7 +100,7 @@ export default function SwipeDeck() {
       const unique = more.filter(a => !existingTitles.has(a.title))
       return unique.length > 0 ? [...prev, ...unique] : prev
     })
-  }, [])
+  }, [mode])
 
   useEffect(() => {
     loadInitialArticles()
@@ -108,30 +158,14 @@ export default function SwipeDeck() {
     handleSwipe(direction)
   }
 
-  async function handleSurpriseMe() {
-    setLoading(true)
-    try {
-      const randoms = await getRandomArticles(5)
-      const newArticles = []
-      for (const r of randoms) {
-        const summary = await getArticleSummary(r.title)
-        if (summary && summary.type === 'standard' && summary.extract) {
-          newArticles.push({
-            title: summary.title,
-            description: summary.extract,
-            thumbnail: summary.thumbnail?.source || null,
-            originalimage: summary.originalimage?.source || null,
-            pageUrl: summary.content_urls?.desktop?.page || '',
-            categories: [],
-          })
-        }
-      }
-      setArticles(newArticles)
-      setCurrentIndex(0)
-    } catch (e) {
-      // silently fail
+  function toggleMode() {
+    const newMode = mode === 'personal' ? 'random' : 'personal'
+    setMode(newMode)
+    if (newMode === 'random') {
+      loadRandomArticles()
+    } else {
+      loadInitialArticles()
     }
-    setLoading(false)
   }
 
   const currentArticle = articles[currentIndex]
@@ -220,12 +254,16 @@ export default function SwipeDeck() {
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleSurpriseMe}
-            className="w-12 h-12 rounded-full bg-white/10 border-2 border-yellow-400/50 hover:bg-yellow-400/20 flex items-center justify-center transition-colors shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggleMode}
+            className={`h-10 px-4 rounded-full border-2 flex items-center justify-center transition-colors shadow-lg text-sm font-semibold ${
+              mode === 'random'
+                ? 'bg-yellow-400/20 border-yellow-400/50 text-yellow-300'
+                : 'bg-secondary/20 border-secondary/50 text-secondary'
+            }`}
           >
-            <span className="text-xl">🎲</span>
+            {mode === 'random' ? '🎲 Random' : '✨ Personlig'}
           </motion.button>
 
           <motion.button
