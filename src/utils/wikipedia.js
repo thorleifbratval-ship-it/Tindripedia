@@ -1,4 +1,10 @@
-import { getLanguage, getDisliked } from './storage'
+import { getLanguage, getDisliked, getLiked } from './storage'
+
+function getSeenTitles() {
+  const disliked = getDisliked()
+  const liked = getLiked().map(a => a.title)
+  return new Set([...disliked, ...liked])
+}
 
 const TOPIC_SEARCH_TERMS = {
   history: { en: 'History', no: 'Historie', sv: 'Historia', de: 'Geschichte' },
@@ -68,8 +74,7 @@ export async function getArticleLinks(title, limit = 20) {
 }
 
 export async function fetchRelatedToArticle(articleTitle, count = 3) {
-  const disliked = getDisliked()
-  const seenTitles = new Set(disliked)
+  const seenTitles = getSeenTitles()
   seenTitles.add(articleTitle)
 
   try {
@@ -113,8 +118,7 @@ export async function getRandomArticles(count = 5) {
 
 export async function fetchArticlesForTopics(topics, perTopic = 3) {
   const lang = getLanguage()
-  const disliked = getDisliked()
-  const seenTitles = new Set(disliked)
+  const seenTitles = getSeenTitles()
   const articles = []
 
   const shuffled = [...topics].sort(() => Math.random() - 0.5)
@@ -146,8 +150,7 @@ export async function fetchArticlesForTopics(topics, perTopic = 3) {
 }
 
 export async function fetchRelatedArticles(searchTerms, count = 5) {
-  const disliked = getDisliked()
-  const seenTitles = new Set(disliked)
+  const seenTitles = getSeenTitles()
   const articles = []
 
   const shuffledTerms = [...searchTerms].sort(() => Math.random() - 0.5)

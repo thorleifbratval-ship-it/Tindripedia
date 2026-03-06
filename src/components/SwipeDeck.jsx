@@ -45,7 +45,11 @@ export default function SwipeDeck() {
     const searchTerms = topCats.length > 0 ? topCats : topics
 
     const more = await fetchRelatedArticles(searchTerms, 5)
-    setArticles(prev => [...prev, ...more])
+    setArticles(prev => {
+      const existingTitles = new Set(prev.map(a => a.title))
+      const unique = more.filter(a => !existingTitles.has(a.title))
+      return unique.length > 0 ? [...prev, ...unique] : prev
+    })
   }, [])
 
   useEffect(() => {
@@ -79,9 +83,11 @@ export default function SwipeDeck() {
         }
         if (related.length > 0) {
           setArticles(prev => {
+            const existingTitles = new Set(prev.map(a => a.title))
+            const unique = related.filter(a => !existingTitles.has(a.title))
+            if (unique.length === 0) return prev
             const next = [...prev]
-            // Insert related articles right after current position
-            next.splice(currentIndex + 1, 0, ...related)
+            next.splice(currentIndex + 1, 0, ...unique)
             return next
           })
         }
