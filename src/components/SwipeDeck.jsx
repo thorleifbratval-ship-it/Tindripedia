@@ -90,11 +90,18 @@ export default function SwipeDeck() {
       })
       return
     }
-    const topCats = getTopCategories(5)
-    const topics = getTopics()
-    const searchTerms = topCats.length > 0 ? topCats : topics
 
-    const more = await fetchRelatedArticles(searchTerms, 5)
+    // Mix fresh topic articles with category-based recommendations
+    const topics = getTopics()
+    const topCats = getTopCategories(5)
+
+    const results = await Promise.all([
+      fetchArticlesForTopics(topics, 1),
+      topCats.length > 0 ? fetchRelatedArticles(topCats, 3) : Promise.resolve([]),
+    ])
+
+    const more = [...results[0], ...results[1]].sort(() => Math.random() - 0.5)
+
     setArticles(prev => {
       const existingTitles = new Set(prev.map(a => a.title))
       const unique = more.filter(a => !existingTitles.has(a.title))
@@ -135,7 +142,14 @@ export default function SwipeDeck() {
             const unique = related.filter(a => !existingTitles.has(a.title))
             if (unique.length === 0) return prev
             const next = [...prev]
-            next.splice(currentIndex + 1, 0, ...unique)
+            // Spread related articles out: first one 2-3 cards ahead,
+            // rest spaced 2-3 cards apart so it feels like natural discovery
+            const basePos = currentIndex + 2
+            unique.forEach((article, i) => {
+              const offset = i * 3 + Math.floor(Math.random() * 2)
+              const insertAt = Math.min(basePos + offset, next.length)
+              next.splice(insertAt, 0, article)
+            })
             return next
           })
         }
