@@ -5,6 +5,7 @@ const KEYS = {
   LIKED: 'tindripedia_liked',
   DISLIKED: 'tindripedia_disliked',
   CATEGORY_WEIGHTS: 'tindripedia_category_weights',
+  HIDDEN_LIKES: 'tindripedia_hidden_likes',
 }
 
 // Request persistent storage so iOS/Safari doesn't evict our data
@@ -79,6 +80,29 @@ export function updateLikedCategories(title, categories) {
 export function removeLiked(title) {
   const liked = getLiked().filter(a => a.title !== title)
   set(KEYS.LIKED, liked)
+}
+
+export function hideLiked(title) {
+  const hidden = getHiddenLikes()
+  if (!hidden.includes(title)) {
+    hidden.push(title)
+    set(KEYS.HIDDEN_LIKES, hidden)
+  }
+}
+
+export function hideLikedMany(titles) {
+  const hidden = getHiddenLikes()
+  const newHidden = [...new Set([...hidden, ...titles])]
+  set(KEYS.HIDDEN_LIKES, newHidden)
+}
+
+export function getHiddenLikes() {
+  return get(KEYS.HIDDEN_LIKES, [])
+}
+
+export function getVisibleLiked() {
+  const hidden = new Set(getHiddenLikes())
+  return getLiked().filter(a => !hidden.has(a.title))
 }
 
 export function getDisliked() {

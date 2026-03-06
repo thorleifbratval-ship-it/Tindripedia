@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { getLiked, removeLiked, updateLikedCategories } from '../utils/storage'
+import { getVisibleLiked, hideLiked, hideLikedMany, updateLikedCategories } from '../utils/storage'
 import { getArticleCategories } from '../utils/wikipedia'
 import { useState, useMemo, useEffect, useRef } from 'react'
 
@@ -42,13 +42,15 @@ export default function LikedList({ isOpen, onClose, onSelectArticle }) {
   const [liked, setLiked] = useState([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [sortBy, setSortBy] = useState('recent')
+  const [expanded, setExpanded] = useState(new Set())
   const backfillRef = useRef(false)
 
   // Refresh liked list when panel opens
   if (isOpen && refreshKey === 0) {
-    setLiked(getLiked())
+    setLiked(getVisibleLiked())
     setRefreshKey(1)
     backfillRef.current = false
+    setExpanded(new Set())
   }
   if (!isOpen && refreshKey !== 0) {
     setRefreshKey(0)
@@ -95,21 +97,30 @@ export default function LikedList({ isOpen, onClose, onSelectArticle }) {
     })
   }, [liked, sortBy])
 
-  function handleRemove(e, title) {
+  function toggleCategory(cat) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
+
+  function handleHide(e, title) {
     e.stopPropagation()
-    removeLiked(title)
+    hideLiked(title)
     setLiked(prev => prev.filter(a => a.title !== title))
   }
 
-  function handleRemoveCategory(category) {
-    const articlesInCat = liked.filter(a => (classifyArticle(a.categories) || 'Annet') === category)
-    for (const article of articlesInCat) {
-      removeLiked(article.title)
-    }
+  function handleHideCategory(category) {
+    const titles = liked
+      .filter(a => (classifyArticle(a.categories) || 'Annet') === category)
+      .map(a => a.title)
+    hideLikedMany(titles)
     setLiked(prev => prev.filter(a => (classifyArticle(a.categories) || 'Annet') !== category))
   }
 
-  function ArticleRow({ article, onSelect, onRemove }) {
+  function ArticleRow({ article, onSelect, onHide }) {
     return (
       <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
         <button
@@ -137,7 +148,7 @@ export default function LikedList({ isOpen, onClose, onSelectArticle }) {
           </div>
         </button>
         <button
-          onClick={(e) => onRemove(e, article.title)}
+          onClick={(e) => onHide(e, article.title)}
           className="w-8 h-8 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center flex-shrink-0 transition-colors text-gray-400 text-sm"
         >
           ✕
@@ -216,38 +227,65 @@ export default function LikedList({ isOpen, onClose, onSelectArticle }) {
                       key={article.title}
                       article={article}
                       onSelect={(a) => { onSelectArticle(a); onClose() }}
-                      onRemove={handleRemove}
+                      onHide={handleHide}
                     />
                   ))}
                 </div>
               ) : (
-                <div className="space-y-5">
-                  {grouped.map(([category, articles]) => (
-                    <div key={category}>
-                      <div className="flex items-center justify-between mb-2 px-1">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          {category}
-                          <span className="ml-1 text-gray-300">({articles.length})</span>
-                        </h3>
+                <div className="space-y-2">
+                  {grouped.map(([category, articles]) => {
+                    const isExpanded = expanded.has(category)
+                    return (
+                      <div key={category} className="rounded-xl overflow-hidden">
                         <button
-                          onClick={() => handleRemoveCategory(category)}
-                          className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                          onClick={() => toggleCategory(category)}
+                          className="w-full flex items-center justify-between px-3 py-3 bg-gray-100 hover:bg-gray-200 transition-colors"
                         >
-                          Fjern alle
+                          <div className="flex items-center gap-2">
+                            <motion.span
+                              animate={{ rotate: isExpanded ? 90 : 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-gray-400 text-xs"
+                            >
+                              ▶
+                            </motion.span>
+                            <span className="text-sm font-bold text-text">
+                              {category}
+                            </span>
+                            <span className="text-xs text-gray-400">({articles.length})</span>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleHideCategory(category) }}
+                            className="text-xs text-gray-300 hover:text-red-400 transition-colors px-2"
+                          >
+                            Skjul alle
+                          </button>
                         </button>
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="space-y-1 p-2">
+                                {articles.map((article) => (
+                                  <ArticleRow
+                                    key={article.title}
+                                    article={article}
+                                    onSelect={(a) => { onSelectArticle(a); onClose() }}
+                                    onHide={handleHide}
+                                  />
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <div className="space-y-2">
-                        {articles.map((article) => (
-                          <ArticleRow
-                            key={article.title}
-                            article={article}
-                            onSelect={(a) => { onSelectArticle(a); onClose() }}
-                            onRemove={handleRemove}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

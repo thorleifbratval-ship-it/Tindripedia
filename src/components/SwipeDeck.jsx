@@ -260,6 +260,41 @@ export default function SwipeDeck() {
         </div>
       </header>
 
+      {/* Mode Slider */}
+      <div className="flex justify-center px-4 py-2 flex-shrink-0">
+        <div className="relative bg-white/10 rounded-full p-1 flex w-56">
+          <motion.div
+            className="absolute top-1 bottom-1 rounded-full"
+            animate={{
+              x: mode === 'personal' ? 0 : '100%',
+              width: '50%',
+            }}
+            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            style={{
+              background: mode === 'personal'
+                ? 'linear-gradient(135deg, rgba(108, 209, 190, 0.4), rgba(108, 209, 190, 0.2))'
+                : 'linear-gradient(135deg, rgba(250, 204, 21, 0.4), rgba(250, 204, 21, 0.2))',
+            }}
+          />
+          <button
+            onClick={() => mode !== 'personal' && toggleMode()}
+            className={`relative z-10 flex-1 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              mode === 'personal' ? 'text-secondary' : 'text-white/40'
+            }`}
+          >
+            ✨ Personlig
+          </button>
+          <button
+            onClick={() => mode !== 'random' && toggleMode()}
+            className={`relative z-10 flex-1 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              mode === 'random' ? 'text-yellow-300' : 'text-white/40'
+            }`}
+          >
+            🎲 Tilfeldig
+          </button>
+        </div>
+      </div>
+
       {/* Card Stack */}
       <div className="flex-1 flex items-center justify-center px-4 pb-2">
         <div className="relative w-full max-w-sm aspect-[3/4.5] max-h-[calc(100dvh-180px)]">
@@ -314,19 +349,6 @@ export default function SwipeDeck() {
             className="w-16 h-16 rounded-full bg-white/10 border-2 border-dislike/50 hover:bg-dislike/20 flex items-center justify-center transition-colors shadow-lg"
           >
             <span className="text-3xl text-dislike font-bold">✕</span>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleMode}
-            className={`h-10 px-4 rounded-full border-2 flex items-center justify-center transition-colors shadow-lg text-sm font-semibold ${
-              mode === 'random'
-                ? 'bg-yellow-400/20 border-yellow-400/50 text-yellow-300'
-                : 'bg-secondary/20 border-secondary/50 text-secondary'
-            }`}
-          >
-            {mode === 'random' ? '🎲 Tilfeldig' : '✨ Personlig'}
           </motion.button>
 
           <motion.button
