@@ -67,6 +67,20 @@ export function addLiked(article) {
   }
 }
 
+export function updateLikedCategories(title, categories) {
+  const liked = getLiked()
+  const article = liked.find(a => a.title === title)
+  if (article) {
+    article.categories = categories
+    set(KEYS.LIKED, liked)
+  }
+}
+
+export function removeLiked(title) {
+  const liked = getLiked().filter(a => a.title !== title)
+  set(KEYS.LIKED, liked)
+}
+
 export function getDisliked() {
   return get(KEYS.DISLIKED, [])
 }

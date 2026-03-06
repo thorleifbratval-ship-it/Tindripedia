@@ -120,7 +120,7 @@ export default function ArticleModal({ article, onClose }) {
               target="_blank"
               rel="noopener noreferrer"
               className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-sm flex-shrink-0"
-              title="Open in Wikipedia"
+              title="Åpne i Wikipedia"
             >
               ↗
             </a>

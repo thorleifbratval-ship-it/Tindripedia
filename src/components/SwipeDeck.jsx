@@ -253,14 +253,9 @@ export default function SwipeDeck() {
           </button>
           <button
             onClick={() => setShowLiked(true)}
-            className="relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
           >
             <span className="text-lg">❤️</span>
-            {getLiked().length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                {getLiked().length}
-              </span>
-            )}
           </button>
         </div>
       </header>
@@ -271,17 +266,17 @@ export default function SwipeDeck() {
           {loading ? (
             <div className="w-full h-full rounded-3xl bg-white/5 flex flex-col items-center justify-center">
               <div className="w-10 h-10 border-3 border-secondary border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-white/50">Loading articles...</p>
+              <p className="text-white/50">Laster artikler...</p>
             </div>
           ) : !currentArticle ? (
             <div className="w-full h-full rounded-3xl bg-white/5 flex flex-col items-center justify-center">
               <span className="text-5xl mb-4">🔄</span>
-              <p className="text-white/50 mb-4">No more articles</p>
+              <p className="text-white/50 mb-4">Ingen flere artikler</p>
               <button
                 onClick={loadInitialArticles}
                 className="bg-gradient-to-r from-secondary to-secondary-dark text-white font-semibold py-2 px-6 rounded-full"
               >
-                Load more
+                Last inn flere
               </button>
             </div>
           ) : (
@@ -331,7 +326,7 @@ export default function SwipeDeck() {
                 : 'bg-secondary/20 border-secondary/50 text-secondary'
             }`}
           >
-            {mode === 'random' ? '🎲 Random' : '✨ Personlig'}
+            {mode === 'random' ? '🎲 Tilfeldig' : '✨ Personlig'}
           </motion.button>
 
           <motion.button
