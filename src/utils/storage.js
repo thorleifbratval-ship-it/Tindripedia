@@ -7,6 +7,11 @@ const KEYS = {
   CATEGORY_WEIGHTS: 'tindripedia_category_weights',
 }
 
+// Request persistent storage so iOS/Safari doesn't evict our data
+if (navigator.storage?.persist) {
+  navigator.storage.persist()
+}
+
 function get(key, fallback = null) {
   try {
     const val = localStorage.getItem(key)
