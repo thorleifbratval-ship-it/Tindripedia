@@ -33,3 +33,77 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* Wikipedia article styling */
+.wiki-body {
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #2d3436;
+  word-wrap: break-word;
+}
+.wiki-body h1, .wiki-body h2, .wiki-body h3, .wiki-body h4 {
+  color: #1a1a2e;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}
+.wiki-body h2 { font-size: 1.3em; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.3em; }
+.wiki-body h3 { font-size: 1.1em; }
+.wiki-body p { margin: 0.8em 0; }
+.wiki-body a { color: #4ecdc4; text-decoration: none; }
+.wiki-body a:hover { text-decoration: underline; }
+.wiki-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+.wiki-body figure, .wiki-body .thumb {
+  margin: 12px 0;
+  text-align: center;
+}
+.wiki-body figcaption, .wiki-body .thumbcaption {
+  font-size: 0.8em;
+  color: #636e72;
+  margin-top: 4px;
+}
+.wiki-body table {
+  font-size: 13px;
+  border-collapse: collapse;
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+.wiki-body th, .wiki-body td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+}
+.wiki-body th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+.wiki-body ul, .wiki-body ol { padding-left: 1.5em; margin: 0.5em 0; }
+.wiki-body li { margin: 0.3em 0; }
+.wiki-body .infobox, .wiki-body .sidebar {
+  width: 100% !important;
+  float: none !important;
+  margin: 12px 0 !important;
+  font-size: 13px;
+}
+.wiki-body .mw-editsection,
+.wiki-body .reference,
+.wiki-body .mw-ref,
+.wiki-body .noprint,
+.wiki-body .navbox,
+.wiki-body .sistersitebox,
+.wiki-body .metadata {
+  display: none !important;
+}
+.wiki-body .mw-parser-output > .hatnote {
+  font-style: italic;
+  color: #636e72;
+  font-size: 0.9em;
+  margin-bottom: 1em;
+}
