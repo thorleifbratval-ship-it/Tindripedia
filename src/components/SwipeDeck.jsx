@@ -15,6 +15,7 @@ import {
 import {
   fetchArticlesForTopics,
   fetchRelatedArticles,
+  fetchRelatedToArticle,
   getArticleCategories,
   getRandomArticles,
   getArticleSummary,
@@ -65,12 +66,24 @@ export default function SwipeDeck() {
 
     if (direction === 'right') {
       addLiked(article)
-      // Fetch categories and boost them for future recommendations
+      // Fetch related articles from the liked article's internal links
+      // and inject them right after the current position
       try {
-        const cats = await getArticleCategories(article.title)
+        const [cats, related] = await Promise.all([
+          getArticleCategories(article.title),
+          fetchRelatedToArticle(article.title, 3),
+        ])
         if (cats.length > 0) {
           boostCategories(cats)
           article.categories = cats
+        }
+        if (related.length > 0) {
+          setArticles(prev => {
+            const next = [...prev]
+            // Insert related articles right after current position
+            next.splice(currentIndex + 1, 0, ...related)
+            return next
+          })
         }
       } catch (e) {
         // silently continue

@@ -56,6 +56,52 @@ export async function getArticleCategories(title) {
   return (page?.categories || []).map(c => c.title.replace(/^[^:]+:/, ''))
 }
 
+export async function getArticleLinks(title, limit = 20) {
+  const baseUrl = getBaseUrl()
+  const url = `${baseUrl}/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=links&pllimit=${limit}&plnamespace=0&format=json&origin=*`
+
+  const res = await fetch(url)
+  const data = await res.json()
+  const pages = data.query?.pages || {}
+  const page = Object.values(pages)[0]
+  return (page?.links || []).map(l => l.title)
+}
+
+export async function fetchRelatedToArticle(articleTitle, count = 3) {
+  const disliked = getDisliked()
+  const seenTitles = new Set(disliked)
+  seenTitles.add(articleTitle)
+
+  try {
+    const links = await getArticleLinks(articleTitle, 30)
+    // Filter out meta/list pages and shuffle
+    const filtered = links
+      .filter(t => !t.includes(':') && !seenTitles.has(t))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, count + 3)
+
+    const articles = []
+    for (const title of filtered) {
+      if (articles.length >= count) break
+      const summary = await getArticleSummary(title)
+      if (summary && summary.type === 'standard' && summary.extract && summary.extract.length > 50) {
+        articles.push({
+          title: summary.title,
+          description: summary.extract,
+          thumbnail: summary.thumbnail?.source || null,
+          originalimage: summary.originalimage?.source || null,
+          pageUrl: summary.content_urls?.desktop?.page || '',
+          categories: [],
+          _relatedTo: articleTitle,
+        })
+      }
+    }
+    return articles
+  } catch (e) {
+    return []
+  }
+}
+
 export async function getRandomArticles(count = 5) {
   const baseUrl = getBaseUrl()
   const url = `${baseUrl}/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=${count}&format=json&origin=*`
